@@ -10,8 +10,10 @@
 #include "iphdr.h"
 #include "tcphdr.h"
 #include <libnetfilter_queue/libnetfilter_queue.h>
+#define PORT 4660
 int netfilterswitch=NF_ACCEPT;
 int flag=0;
+u_int fakeseq;
 /* returns packet id */
 static u_int32_t print_pkt (struct nfq_data *tb)
 {
@@ -39,11 +41,14 @@ static u_int32_t print_pkt (struct nfq_data *tb)
 			TcpHdr* tcphdr=(TcpHdr*)(data+ip_len);
 			int tcp_len=tcphdr->TH_OFF()*4;
 			int payload_len=ntohs(iphdr->ip_len)-ip_len-tcp_len;
-			if(tcphdr->th_flags&TH_ACK==TH_ACK&& flag==0){
-				
+			if(ntohs(tcphdr->th_sport)==PORT&&tcphdr->th_flags&TH_ACK==TH_ACK&& flag==0){
+				flag=1;
+				fakeseq=ntohl(tcphdr->th_seq);
 			}
-			else if(tcphdr->th_flags&TH_PUSH==TH_PUSH){
-
+			else if(ntohs(tcphdr->th_sport)==PORT&&tcphdr->th_flags&TH_PUSH==TH_PUSH){
+				//encapsule plz
+				//send packet plz
+				netfilterswitch=NF_DROP;
 			}
 		}
     }
